@@ -1,0 +1,11 @@
+#Laboratory Exercise 4, Home Assignment 2
+.data
+X : .word 0x12345678
+.text
+la $a1, X
+lw $s0, 0($a1)
+andi $t0, $s0, 0xff000000 #Extract MSB
+srl $t0, $t0, 24
+andi $s0, $s0, 0xffffff00 #Clear LSB
+ori $s0, $s0, 0xff #Bits 7 to 0 are set to 1
+andi $s0,$s0, 0 #Clear s0

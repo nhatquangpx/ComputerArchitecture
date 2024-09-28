@@ -1,0 +1,24 @@
+.data 
+x :.word 16
+y :.word 2
+.text
+la $a1, x
+lw $s0, 0($a1)
+la $a2, y
+lw $s1, 0($a2)
+add $s3, $s0, $zero   #Tích là s3
+addi $s5, $s5, 1
+addi $t2, $t2, 0
+addi $s6, $s6, 2
+sle $s7, $s6, $s1
+beq $s7, $zero, EXIT
+li $t1, 0            
+Tinhsomu:
+srl $s1, $s1, 1         
+addi $t1, $t1, 1        
+bne $s1, $s5, Tinhsomu  
+Nhan:
+sll $s3, $s3, 1        
+addi $t2, $t2, 1         
+bne $t2, $t1, Nhan      
+EXIT:

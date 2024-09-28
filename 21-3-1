@@ -1,0 +1,32 @@
+.data
+Message: .space 50
+.text
+get_string:
+li $v0, 8
+la $a0, Message
+li $a1, 21
+syscall 
+get_length: 
+xor $v0, $zero, $zero # v0 = length = 0
+xor $t0, $zero, $zero # t0 = i = 0
+check_char: add $t1, $a0, $t0 # t1 = a0 + t0
+#= Address(string[0]+i)
+lb $t2, 0($t1) # t2 = string[i]
+beq $t2,$zero,end_of_str # Is null char?
+addi $t0, $t0, 1
+j check_char
+end_of_str :
+addi $t0, $t0, -1
+la $s0, Message
+li $v0, 4
+print_reverse_string:
+add $t1, $s0, $t0
+li $v0, 11          
+lb $a0, ($t1)       
+syscall
+beq $t0,$zero,end_print_string
+addi $t0, $t0, -1
+j print_reverse_string
+end_print_string:
+li $v0, 10       
+syscall

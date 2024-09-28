@@ -1,0 +1,652 @@
+.data
+# ----------------------------------------------------------------------------- #
+# Thu vien opcode							
+# Moi opcode, thanh ghi co chieu dai 8 bytes 
+
+opcodeLib:    .asciiz         "add,41  sub,41  addu,41 subu,41 mul,41  and,41  or,41   nor,41  xor,41  slt,41  addi,42 addiu,42andi,42 ori,42  sll,42  srl,42  slti,42 sltiu,42mult,43 div,43  lw,54   sw,44   lb,54   sb,44   lbu,54  lhu,54  ll,54   sh,44   lui,45  mfhi,46 mflo,46 jr,36   beq,37  bne,37  j,38    jal,38  "
+
+# Thu vien thanh ghi:
+
+#registerLib: .asciiz         "$zero   $at     $v0     $v1     $a0     $a1     $a2     $a3     $t0     $t1     $t2     $t3     $t4     $t5     $t6     $t7     $s0     $s1     $s2     $s3     $s4     $s5     $s6     $s7     $t8     $t9     $k0     $k1     $gp     $sp     $fp     $ra     $0      $1      $2      $3      $4      $5      $6      $7      $8      $9      $10     $11     $12     $13     $14     $15     $16     $17     $18     $19     $20     $21     $22     $21     $22     $23     $24     $25     $26     $27     $28     $29     $30     $31     $0      "
+registerLib: .asciiz         "zero    at      v0      v1      a0      a1      a2      a3      t0      t1      t2      t3      t4      t5      t6      t7      s0      s1      s2      s3      s4      s5      s6      s7      t8      t9      k0      k1      gp      sp      fp      ra      0       1       2       3       4       5       6       7       8       9       10      11      12      13      14      15      16      17      18      19      20      21      22      21      22      23      24      25      26      27      28      29      30      31      0       "
+
+# ----------------------------------------------------------------------------- #
+
+buffer:       .space          100
+opcode:       .space          10
+
+# ----------------------------------------------------------------------------- #
+
+# Thong bao:
+
+border:                         .asciiz         "\n# ----------------------------------------------------------#\n"
+Thong_bao_bat_dau:              .asciiz         "           Kiem tra cu phap\n"
+Nhap_lenh:  	                .asciiz 	"Nhap lenh: "
+Opcode_hop_le:          	.asciiz         "\nOpcode hop le: "
+Chu_ky_lenh:			.asciiz		"\nChu ky lenh: "
+Dung_cu_phap:            	.asciiz         "\nCu phap lenh MIPS hop le."
+Thong_bao_tiep_tuc:             .asciiz         "\nTiep tuc? (1. Co 0. Khong): "
+Opcode_khong_hop_le:  		.asciiz         "\nOpcode khong hop le."
+Thanh_ghi_khong_hop_le:      	.asciiz         "\nThanh ghi khong hop le."
+So_khong_hop_le:        	.asciiz         "\nSo khong hop le."
+Dia_chi_khong_hop_le:       	.asciiz         "\nDia chi khong hop le."
+Thieu_toan_hang:                .asciiz         "\nThieu toan hang"
+Thieu_dau_phay:   		.asciiz         "\nThieu dau phay."
+Thua_toan_hang:			.asciiz        	"\nCu phap co qua nhieu toan hang."
+
+# ----------------------------------------------------------------------------- #
+
+.text
+
+main:
+        jal     	start
+
+Doc_du_lieu:
+
+        li		$v0, 8      	                        # Lay input
+        la 		$a0, buffer  	                        # Tao khoang trong de luu lenh
+        li		$a1, 100      	                        
+        syscall
+        move 		$s0, $a0  		                # Luu string vao s0
+
+Xoa_khoang_trong:					# Xoa khoang trong truoc opcode neu co	
+							
+        jal     	check_khoang_trong
+        
+doc_opcode:						# Doc va luu opcode
+					
+        la 	        $a1, opcode	                # Luu cac ki tu doc duoc vao opcode
+        la              $s1, opcode                     # Luu dia chi opcode vao thanh ghi $s1
+        
+loop_doc_opcode: 
+
+        lb 	        $t1, 0($a0)                     # Doc tung ki tu cua opcode
+        beq 	        $t1, ' ', check_opcode          # Gap ki tu ' ' 
+        beq 	        $t1, '\n', missing_             # Gap ki tu xuong dong -> xu ly
+        sb 	        $t1, 0($a1)                     # Luu lai vao dia chi cua opcode
+        addi 	        $a0, $a0, 1                     # Dich con tro ve ky tu tiep theo
+        addi	        $a1, $a1, 1                     # Dich con tro o opcode sang vi tri byte tiep
+        j		loop_doc_opcode                	# Lap cho den khi het opcode
+
+check_opcode:						# Kiem tra opcode co hop le?
+
+        move            $a1, $s1                        # Dua thanh ghi a1 ve vi tri dau opcode
+        move            $s0, $a0                        # Day con tro s0 sang vung nho moi
+        
+# ----------------------------------------------------------------------------- #
+
+# Kiem tra cu phap voi thu vien
+
+        la              $s2, opcodeLib                    
+        jal             check
+        j		loi_opcode			# Thong bao opcode khong hop le
+
+check:
+
+        move            $a2, $s2                        # Con tro a2 tro den phan tu dau cua thu vien
+        
+loop_check: 
+
+        lb		$t2, 0($a2)		        # Load tung ki tu tu thu vien
+        beq             $t2, ',', kiem_tra_1           	# Neu gap dau phay, kiem tra xem co dung khong
+        lb		$t1, 0($a1)		        # Load tung ki tu tu opcode
+        beq             $t2, 0, jump_                   # Neu gap ki tu ket thuc, thong bao opcode khong hop le
+        bne		$t1, $t2, next_opcode	        # So sanh ki tu opcode voi thu vien
+        addi            $a1, $a1, 1                     # Ki tu tiep theo
+        addi            $a2, $a2, 1
+        j               loop_check
+
+kiem_tra_1:
+
+        lb		$t1, 0($a1)		        # Load ki tu tu opcode
+        beq             $t1, 0, opcode_done
+        j		next_opcode			
+        
+next_opcode:
+
+        addi            $s2, $s2, 8                     # Dich den opcode tiep theo trong thu vien
+        move            $a2, $s2
+        move            $a1, $s1
+        j               loop_check                      # Lap
+
+opcode_done:     
+
+        jal             correct_opcode
+        
+Hien_thi_chu_ky:
+        
+        	addi            $a2, $a2, 1
+        	lb		$t2, 0($a2)                     # Load chu ki lenh tu thu vien
+        	jal             check_khoang_trong   
+        	addi            $t2, $t2, -48                   # Chuyen tu ma ascii sang int
+        	beq             $t2, 3, Chu_ky_3
+        	beq             $t2, 4, Chu_ky_4
+        	beq             $t2, 5, Chu_ky_5
+        	
+Xet_loai_lenh:	
+        
+        	addi            $a2, $a2, 1
+        	lb		$t2, 0($a2)                     # Load kieu lenh tu thu vien
+        	jal             check_khoang_trong   
+       		addi            $t2, $t2, -48                   # Chuyen tu ma ascii sang int
+        	beq             $t2, 1, Dang_1
+        	beq             $t2, 2, Dang_2
+        	beq             $t2, 3, Dang_3
+        	beq             $t2, 4, Dang_4
+        	beq             $t2, 5, Dang_5
+        	beq             $t2, 6, Dang_6
+        	beq             $t2, 7, Dang_7
+        	beq             $t2, 8, Dang_8
+
+end:
+        j		ending				
+        
+# ----------------------------------------------------------------------------- #
+
+# Cac chuong trinh con
+
+check_khoang_trong:					# Check khoang trong truoc code
+
+        move            $a0, $s0                        # Dong bo con tro $a0 voi $s0
+        lb 	        $t1, 0($a0)                     # Doc tung ki tu cua lenh
+        beq             $t1, ' ', loop_khoang_trong     # Lap de xoa het khoang trong
+        beq             $t1, 9, loop_khoang_trong       # Lap de xoa tab (ma ascii = 9)
+        jr              $ra                             # Trong truong hop khong phai, quay tro ve chuong trinh chinh
+        
+loop_khoang_trong:
+
+        lb 	        $t1, 0($a0)                             # Doc tung ki tu cua lenh
+        beq 	        $t1, ' ', check_khoang_trong_pass       # Khi gap dau cach thi tiep tuc doc
+        beq             $t1, 9, check_khoang_trong_pass          
+        move 	        $s0, $a0		                # Cho dia chi moi cho s0 la ky tu dau tien cua word
+        jr		$ra				        # Tro ve chuong trinh chinh
+        
+check_khoang_trong_pass:
+
+        addi            $a0, $a0, 1                             # Dich $a0 di 1 ky tu
+        j		loop_khoang_trong			# Lap de tiep tuc xoa khoang trong
+        
+check_dau_phay:							# Check dau phay				                
+
+        move            $a0, $s0                                # Dong bo con tro $a0 voi $s0
+        lb 	        $t1, 0($a0)                             # Doc tung ki tu cua lenh
+        bne 	        $t1, ',', thieu_phay                	# Neu ki tu khong la dau phay, thong bao thieu dau phay
+        jr		$ra				        # Neu la dau phay, tro ve chuong trinh chinh
+
+check_khoang_cach:							# Check khoang cach giua cac ma lenh  					
+
+        move    	$t4, $ra
+        jal     	check_khoang_trong
+        jal		check_dau_phay
+        addi    	$a0, $a0, 1                                     # Di chuyen con tro den ki tu sau dau phay
+        move    	$s0, $a0
+        jal     	check_khoang_trong
+        move    	$ra, $t4
+        jr      	$ra
+        
+jump_:
+        jr      	$ra						# Quay ve chuong trinh chinh
+
+# ----------------------------------------------------------------------------- #
+
+CHU_KY_LENH:
+Chu_ky_3:
+	la 		$a0, Chu_ky_lenh
+        li		$v0, 4
+        syscall
+        li 		$a0, 3
+        li 		$v0, 1
+        syscall
+        j 		Xet_loai_lenh
+
+Chu_ky_4:
+	la 		$a0, Chu_ky_lenh
+        li		$v0, 4
+        syscall
+        li 		$a0, 4
+        li 		$v0, 1
+        syscall	
+        j 		Xet_loai_lenh
+  
+Chu_ky_5:
+	la 		$a0, Chu_ky_lenh
+        li		$v0, 4
+        syscall
+        li 		$a0, 5
+        li 		$v0, 1
+        syscall
+        j 		Xet_loai_lenh
+
+# ----------------------------------------------------------------------------- #
+
+DANG_OPCODE:
+Dang_1:								# Cu phap chung: xyz $s1, $s2, $s3
+# Thu vien opcode:         .asciiz         "add,    sub,    addu,   subu,   mul,    and,    or,     nor,    xor,    slt"
+
+        jal     check_thanh_ghi
+        jal     check_khoang_cach
+        jal     check_thanh_ghi
+        jal     check_khoang_cach
+        jal     check_thanh_ghi
+        jal     check_end
+
+Dang_2:								# Cu phap chung: xyz $s1, $s2, 100            
+# Thu vien opcode:         .asciiz         "addi,   addiu,   andi,   ori,    sll,    srl,    slti,   sltiu"
+
+        jal     check_thanh_ghi
+        jal     check_khoang_cach
+        jal     check_thanh_ghi
+        jal     check_khoang_cach
+        jal     check_so
+        jal     check_end
+
+Dang_3:								# Cu phap chung: xyz $s1, $s2
+# Thu vien opcode:	    .asciiz         "mult,   div"
+
+        jal     check_thanh_ghi
+        jal     check_khoang_cach
+        jal     check_thanh_ghi
+        jal     check_end
+
+Dang_4:								# Cu phap chung: xyz $s1, 100($s2)                                                 
+# Thu vien opcode:   	    .asciiz         "lw,     sw,     lb,     sb,     lbu,    lhu,    ll,     sh"
+
+        jal     check_thanh_ghi
+        jal     check_khoang_cach
+        jal     check_dia_chi
+        jal     check_end
+
+Dang_5:								# Cu phap chung: lui $s1,100
+# Thu vien opcode:    	    .asciiz         "lui" 
+
+        jal     check_thanh_ghi
+        jal     check_khoang_cach
+        jal     check_so
+        jal     check_end
+
+Dang_6:								# Cu phap chung: xyz $s1
+# Thu vien opcode:    	    .asciiz         "mfhi,   mflo,   jr"
+
+        jal     check_thanh_ghi
+        jal     check_end
+
+Dang_7:								# Cu phap chung: xyz $s1, $s2, 100 / xyz $s1, $s2, label
+# Thu vien opcode:          .asciiz         "beq,    bne"
+
+        jal     check_thanh_ghi
+        jal     check_khoang_cach
+        jal     check_thanh_ghi
+        jal     check_khoang_cach
+        jal     check_nhan
+        beq     $s7, 1, check_end
+        jal     check_so
+        jal     check_end
+
+Dang_8:								# Cu phap chung: xyz 100 / xyz label
+# Thu vien opcode:           .asciiz         "j,      jal"
+
+        jal     check_nhan
+        beq     $s7, 1, check_end
+        jal     check_so
+        jal     check_end
+
+# ----------------------------------------------------------------------------- #
+
+# Check cu phap
+
+check_thanh_ghi:						# Check thanh ghi 
+
+	la      	$s3, registerLib
+	move    	$a3, $s3                        	# Con tro a3 tro vao dau thu vien thanh ghi
+	move    	$a0, $s0
+
+loop_check_thanh_ghi:
+                
+	lb		$t3, 0($a3)		        # Load tung ki tu tu thu vien thanh ghi
+	lb		$t0, 0($a0)		        # Load tung ki tu tu lenh
+	beq             $t3, ' ', kiem_tra_2            # Neu gap ki tu là khoang trong => xu li
+	beq             $t3, 0, thanh_ghi_khong_hop_le  # Neu gap ki tu ket thuc, thong bao thanh ghi khong hop le
+	bne		$t0, $t3, next_reg	        # Neu so sanh hai ki tu khong khop, dich den thanh ghi tiep theo trong thu vien
+	addi            $a0, $a0, 1                     # Dich 1 ki tu
+	addi            $a3, $a3, 1
+	j               loop_check_thanh_ghi
+                        
+kiem_tra_2:
+                
+	lb              $t0, 0($a0)
+	beq             $t0, ',', found_reg             # Thanh ghi hop le    
+	beq             $t0, ' ', found_reg             # Thanh ghi hop le       
+	beq             $t0, 0, found_reg               # Thanh ghi hop le       
+	beq             $t0, '\n', found_reg            # Thanh ghi hop le          
+	j		next_reg			# Dich den thanh ghi tiep theo trong thu vien
+                        
+next_reg:
+                
+	addi            $s3, $s3, 8                     # Dich den thanh ghi tiep theo trong thu vien
+	move            $a3, $s3
+	move            $a0, $s0
+	j		loop_check_thanh_ghi		# Lap de check thanh ghi
+                        
+found_reg:
+                
+	move            $s0, $a0                        
+	j		jump_				# Tro ve chuong trinh chinh_
+                        
+check_so:							#Check so
+
+	move            $a0, $s0
+                
+check_so_loop:
+                
+	lb              $t0, 0($a0)
+	beq             $t0, ',', la_so1                 # Hop le
+	beq             $t0, ' ', la_so1                 # Hop le
+	beq             $t0, 0, la_so1                   # Hop le
+	beq             $t0, '\n', la_so1                # Hop le
+	bgt		$t0, '9', khong_la_so1	        
+	blt		$t0, '0', khong_la_so1	         # Neu nam ngoai khoang tu 0-9, thong bao so khong hop le
+	addi            $a0, $a0, 1
+	j		check_so_loop			 # Lap de check so
+                        
+la_so1:
+                
+	move            $s0, $a0
+	j               jump_				 # Tro ve chuong trinh chinh
+                        
+khong_la_so1:
+                
+	j		loi_khong_la_so			 # Thong bao so khong hop le
+                        
+check_dia_chi:							 # Check dia chi ( Vi du: 100($s1) )
+	adcheck_so:      
+		check_so_loop2:
+                        
+			lb              $t0, 0($a0)
+			beq             $t0, '(', la_so2                # Hop le
+			bgt		$t0, '9', khong_la_so2	        
+			blt		$t0, '0', khong_la_so2	        # Neu nam ngoai khoang tu 0-9, thong bao so khong hop le
+			addi            $a0, $a0, 1
+			j		check_so_loop2			# Lap de check so
+                                
+                        la_so2:
+                        
+			move            $s0, $a0
+			j               adcheck_thanh_ghi		# Check thanh ghi dia chi
+                                
+                        khong_la_so2:
+                        	
+			j		loi_dia_chi			# Thong bao dia chi khong hop le
+                adcheck_thanh_ghi:
+                        check_thanh_ghi2:					# Check thanh ghi dia chi
+                        addi		$a0, $a0, 1
+                        move		$s0, $a0
+                	la      	$s3, registerLib
+               	 	move    	$a3, $s3                       
+               	 	move    	$a0, $s0
+
+                loop_check_thanh_ghi2:
+                
+                        lb		$t3, 0($a3)		        
+                        lb		$t0, 0($a0)		        
+                        beq             $t3, ' ', evaluation3           # Neu gap khoang trong => Xu li
+                        beq             $t3, 0, loi_dia_chi2      	# Neu gap ki tu ket thuc, thong bao thanh ghi khong hop le
+                        bne		$t0, $t3, next_reg2	        # Neu so sanh hai ki tu khong khop, dich den thanh ghi tiep theo trong thu vien
+                        addi            $a0, $a0, 1                     # Dich den ki tu tiep theo
+                        addi            $a3, $a3, 1
+                        j               loop_check_thanh_ghi2
+                        
+                evaluation3:
+                
+                        lb              $t0, 0($a0)
+                        beq             $t0, ')', found_reg2            # Hop le
+                        j		next_reg2			
+                        
+                next_reg2:
+                
+                        addi            $s3, $s3, 8                     # Dich den thanh ghi tiep theo trong thu vien
+                        move            $a3, $s3
+                        move            $a0, $s0
+                        j		loop_check_thanh_ghi2		# Lap de check thanh ghi dia chi
+                        
+                loi_dia_chi2:						# Thong bao dia chi khong hop le
+                
+                	move		$a0, $t0
+                	li 		$v0, 11
+			syscall
+                        j 		loi_dia_chi
+                        
+                found_reg2:
+                
+                        addi            $a0, $a0, 1
+                        move            $s0, $a0                        
+                        jr		$ra				# Tro ve chuong trinh chinh
+
+check_nhan:						# Check nhan
+        
+	move    	$a0, $s0
+
+	First_char_check: 				# Check ki tu dau tien: Khong the la so hoac dau "_"
+        
+		lb 		$t0, ($a0)    				# Load ki tu 
+		blt 		$t0, 'a', la_chu_hoa1  			
+		bgt 		$t0, 'z', la_chu_hoa1 			# Neu ki tu nam ngoai khoang a - z, check ki tu in hoa
+                        j		loop_check_nhan				# Lap de check ki tu nhan
+                
+                la_chu_hoa1:
+                	
+			blt 		$t0, 'A', fail_case  			
+			bgt 		$t0, 'Z', fail_case			# Neu ki tu nam ngoai khoang A - Z, xu li
+                        
+        	loop_check_nhan: 				# Check cac ki tu sau
+
+                	addi    	$a0, $a0, 1                     	# Dich sang ki tu tiep
+                	lb 		$t0, ($a0)    		        	       
+                	beq     	$t0, ' ', nhan_hop_le           	# Hop le
+                	beq     	$t0, '\n', nhan_hop_le          	# Hop le
+                	beq 		$t0, 0, nhan_hop_le      		# Hop le
+                        blt 		$t0, 'a', la_  			
+                        bgt 		$t0, 'z', la_				# Neu ki tu nam ngoai khoang a - z, check ki tu in hoa
+                        j		loop_check_nhan				# Lap de check ki tu nhan
+                        
+                la_:
+                
+                        bne     	$t0, '_', la_chu_hoa2       		# Check xem ki tu co la dau "_"
+                        j		loop_check_nhan	
+
+                la_chu_hoa2:
+                
+                        blt 		$t0, 'A', khong_la_chu_hoa2 	
+	                bgt 		$t0, 'Z', khong_la_chu_hoa2		# Néu ki tu nam ngoai khoang A - Z, check ki tu co la so
+	                j		loop_check_nhan	
+
+                khong_la_chu_hoa2:
+                
+                        blt 		$t0, '0', fail_case  	
+	                bgt 		$t0, '9', fail_case			# Neu ki tu nam ngoai khoang 0 - 9, xu li
+	                j		loop_check_nhan	
+
+                fail_case:
+                
+                        move    	$a0, $s0                
+                        li      	$s7, 0                  		# Co de kiem tra nhan la so = 0, tiep tuc kiem tra label co la so
+                        jr		$ra					# Tro ve chuong trinh chinh
+                        
+                nhan_hop_le:
+                
+                        move    	$s0, $a0                		
+                        li      	$s7, 1                  		# Nhan hop le
+                        jr      	$ra					# Tro ve chuong trinh chinh
+ 
+ check_end:							# Check lenh nhap vao da ket thuc hay chua (xoa khoang trong)
+
+	jal     	check_khoang_trong
+	lb      	$t5, 0($s0)
+	beq		$t5, '\n', cu_phap_hop_le	
+	beq		$t5, '\0', cu_phap_hop_le	
+	beq     	$t5,  '#', cu_phap_hop_le
+	j       	qua_nhieu_toan_hang
+	
+# ----------------------------------------------------------------------------- #         
+                                    
+hien_thi_thong_bao:
+        start:
+        
+                la 		$a0, border
+                li		$v0, 4
+                syscall
+                la      	$a0, Thong_bao_bat_dau
+                li      	$v0, 4
+                syscall
+                la		$a0, Nhap_lenh    	               
+                li 		$v0, 4
+                syscall
+                jr      	$ra
+
+        correct_opcode:
+        
+                la      	$a0, Opcode_hop_le
+                li      	$v0, 4
+                syscall
+                la      	$a0, opcode
+                li      	$v0, 4
+                syscall	
+                move    	$a0, $s0                
+                jr		$ra		
+
+# ----------------------------------------------------------------------------- #
+
+Loi:
+        thieu_phay:
+        
+                la		$a0, Thieu_dau_phay              
+                li 		$v0, 4
+                syscall
+                j		ending				        
+                
+        loi_opcode:
+        
+                la      	$a0, Opcode_khong_hop_le
+                li      	$v0, 4
+                syscall
+                j		ending	
+                			        
+        qua_nhieu_toan_hang:
+        
+                move		$a0, $s0              
+                li 		$v0, 1
+                syscall
+                la      	$a0, Thua_toan_hang 
+                li      	$v0, 4
+                syscall
+                j       	ending
+                
+        thanh_ghi_khong_hop_le:
+        
+                la      	$a0, Thanh_ghi_khong_hop_le 
+                li      	$v0, 4
+                syscall
+                j       	ending
+                
+        loi_khong_la_so:
+        
+                la      	$a0, So_khong_hop_le 
+                li      	$v0, 4
+                syscall
+                j       	ending
+                
+        loi_dia_chi:
+        
+                la      	$a0, Dia_chi_khong_hop_le 
+                li      	$v0, 4
+                syscall
+                j       	ending
+                
+        missing_:
+        
+                la      	$a0, Thieu_toan_hang
+                li      	$v0, 4
+                syscall
+                j       	ending
+
+# ----------------------------------------------------------------------------- #
+
+cu_phap_hop_le:
+
+        la      	$a0, Dung_cu_phap
+        li      	$v0, 4
+        syscall
+
+# ----------------------------------------------------------------------------- #
+
+ending:
+
+        la      	$a0, Thong_bao_tiep_tuc
+        li      	$v0, 4
+        syscall 
+        li      	$v0, 5
+        syscall 
+        beq     	$v0, 1, resetAll
+        li      	$v0, 10
+        syscall
+        
+# ----------------------------------------------------------------------------- #
+
+resetAll:				# Khoi tao lai tat ca thanh ghi, lam sach hai vung nho opcode và buffer
+        
+	li $v0, 0 
+	li $v1, 0
+	jal don_block				
+        jal don_opcode				
+        li $a0, 0 
+        li $a1, 0
+	li $a2, 0
+	li $a3, 0
+	li $t0, 0
+	li $t1, 0
+	li $t2, 0
+	li $t3, 0
+	li $t4, 0
+	li $t5, 0
+	li $t6, 0
+	li $t7, 0
+	li $t8, 0
+	li $t9, 0
+	li $s0, 0
+	li $s1, 0
+	li $s2, 0
+	li $s3, 0
+	li $s4, 0
+	li $s5, 0
+	li $s6, 0
+        li $s7, 0
+	li $k0, 0
+	li $k1, 0       
+	j main
+
+don_block:
+
+        li $a0, 0 
+        li $a1, 0
+        la $s0, buffer
+        
+loop_block:
+
+        beq		$a1, 100, jump_
+        sb              $a0, 0($s0)
+        addi            $s0, $s0, 1
+        addi            $a1, $a1, 1
+        j               loop_block
+
+don_opcode:
+
+        li 		$a0, 0 
+        li 		$a1, 0
+        la      	$s1, opcode
+        
+loop_opcode:
+
+        beq		$a1, 10, jump_
+        sb              $a0, 0($s1)
+        addi            $s1, $s1, 1
+        addi            $a1, $a1, 1
+        j               loop_opcode

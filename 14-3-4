@@ -1,0 +1,22 @@
+#Laboratory Exercise 4, Assignment 4
+.data
+x : .word 0x7fffffff
+y : .word 0x7fffffff
+.text
+start:
+la $s6, x
+lw $s1, 0($s6)
+la $s7, y
+lw $s2, 0($s7)
+li $t0, 0 
+addu $s3, $s1, $s2
+xor $t1, $s1, $s2
+bltz $t1, EXIT
+xor $t2, $s3, $s1
+bltz $t2, OVERFLOW
+xor $t3, $s3, $s2
+bltz $t3, OVERFLOW
+j EXIT
+OVERFLOW:
+li $t0, 1
+EXIT:

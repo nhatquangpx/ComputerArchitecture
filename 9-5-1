@@ -1,0 +1,63 @@
+.eqv SEVENSEG_LEFT 0xFFFF0011 # Dia chi cua den led 7 doan trai.
+# Bit 0 = doan a;
+# Bit 1 = doan b; ...
+# Bit 7 = dau .
+.eqv SEVENSEG_RIGHT 0xFFFF0010 # Dia chi cua den led 7 doan phai
+.data 
+Number: .byte 0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F
+.text
+main:
+#0: 0x3F (abcdef)
+#1: 0x06 (bc)
+#2: 0x5B (abdeg)
+#3: 0x4F (abcfg)
+#4: 0x66 (bcfg)
+#5: 0x6D (acdfg)
+#6: 0x7D (acdefg)
+#7: 0x07 (abc)
+#8: 0x7F (abcdefg)
+#9: 0x6F (abcdfg)
+li $a0, 0x3F # set value for segments
+jal SHOW_7SEG_LEFT # show
+nop
+addi $t0, $t0, 0
+addi $t1, $t1, 10
+loop_0_to_9: beq $t0, $t1, loop_9_to_0
+la $t2, Number
+add $t2, $t2, $t0
+lb $a0, 0($t2)
+jal SHOW_7SEG_RIGHT # show
+addi $t0, $t0, 1
+j loop_0_to_9
+nop
+loop_9_to_0: addi $t0, $t0, -1
+beq $t0, $0, loop_0_to_9
+la $t2, Number 
+add $t2, $t2, $t0
+lb $a0, 0($t2)
+jal SHOW_7SEG_RIGHT # show
+j loop_9_to_0
+nop
+exit: li $v0, 10
+syscall
+endmain:
+#---------------------------------------------------------------
+# Function SHOW_7SEG_LEFT : turn on/off the 7seg
+# param[in] $a0 value to shown
+# remark $t0 changed
+#---------------------------------------------------------------
+SHOW_7SEG_LEFT: li $t4, SEVENSEG_LEFT # assign port's address
+sb $a0, 0($t4) # assign new value
+nop
+jr $ra
+nop
+#---------------------------------------------------------------
+# Function SHOW_7SEG_RIGHT : turn on/off the 7seg
+# param[in] $a0 value to shown
+# remark $t0 changed
+#---------------------------------------------------------------
+SHOW_7SEG_RIGHT: li $t4, SEVENSEG_RIGHT # assign port's address
+sb $a0, 0($t4) # assign new value
+nop
+jr $ra
+nop

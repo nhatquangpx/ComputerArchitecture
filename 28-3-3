@@ -1,0 +1,35 @@
+.data
+A: .word 30, -4, 15, 7, 3, 22
+.text
+main:
+la $a0, A  #$a0 = Address(A[0])
+li $t0, 0  #i
+li $t7, 6  #n
+BubbleSort:
+loop_i:
+li $t2, 0  #j
+loop_j:
+add $t3, $t2, $t2
+add $t4, $t3, $t3
+add $t5, $t4, $a0
+lw $s0, 0($t5)
+addi $t5, $t5, 4
+lw $s1, 0($t5)
+sgt $t6, $s0, $s1
+bne $t6, $zero, swap
+swap:
+add $s2,$s0,$zero
+add $s0, $s1, $zero
+add $s1, $s2, $zero
+sub $t8, $t7, $t0
+addi $t8, $t8, -1
+slt $s3, $t2, $t8
+addi $t2, $t2, 1
+bne $s3, $zero, loop_j
+end_loop_j:
+addi $t9, $t7, -1
+slt $s4, $t0, $t9
+addi $t0, $t0, 1
+bne $s4, $zero, loop_i
+end_loop_i:
+end_main:
